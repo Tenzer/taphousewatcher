@@ -59,16 +59,9 @@ def get_rating(url):
     rating_block = soup.find('span', itemprop='rating')
 
     if not rating_block:
-        print('The beer does not have any rating')
         return None
 
-    for span in rating_block.find_all('span'):
-        if not span.attrs:
-            # The <span> we are looking for doesn't have any attributes
-            return span.get_text()
-
-    # Safety net
-    return None
+    return int(rating_block.find_all('span')[1].get_text())
 
 
 def make_flag(country_code):
@@ -88,7 +81,7 @@ def generate_tweet(beer):
     if beer['rating']:
         rating_text = ' | RateBeer: {}'.format(beer['rating'])
 
-        if int(beer['rating']) >= 95:
+        if beer['rating'] >= 95:
             rating_text += ' {}'.format(unicodedata.lookup('GLOWING STAR'))
     else:
         rating_text = ''
