@@ -9,9 +9,6 @@ from bs4 import BeautifulSoup
 from twitter import OAuth, Twitter
 
 
-TWITTER = None
-
-
 def read_file(file_path):
     with open(file_path) as file_pointer:
         return json.load(file_pointer)
@@ -52,8 +49,8 @@ def is_new_beer(new_beer, previous_state):
     for beer in previous_state:
         if new_beer['name'] == beer['name']:
             return False
-    else:
-        return True
+
+    return True
 
 
 def make_flag(country_code):
@@ -85,6 +82,7 @@ if __name__ == '__main__':
     for beer in scrape('http://taphouse.dk/'):
         if is_new_beer(beer, previous_state):
             tweet_about_beer(beer, twitter)
+
         new_state.append(beer)
 
     if 'DEBUG' not in environ:
