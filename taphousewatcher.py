@@ -66,8 +66,30 @@ def make_flag(country_code):
     return result
 
 
+def get_rating(url):
+    html = requests.get(url, headers={'User-Agent': 'Taphouse Watcher Bot (+https://twitter.com/TaphouseWatcher)'}).text
+    soup = BeautifulSoup(html, 'html.parser')
+    rating_block = soup.find('span', itemprop='rating')
+
+    if not rating_block:
+        print('The beer does not have any rating')
+        return 'N/A'
+
+    for span in rating_block.find_all('span'):
+        if not span.attrs:
+            # The <span> we are looking for doesn't have any attributes
+            return span.get_text()
+
+    # Safety net
+    return 'N/A'
+
+
 def generate_tweet(beer):
-    return 'New on tap {tap} | {name} | {alcohol} {type} | {brewery} | {country_flag} | {ratebeer_link}'.format(country_flag=make_flag(beer['country']), **beer)
+    return 'New on tap {tap} | {name} | {alcohol} {type} | {brewery} | {country_flag} | RateBeer: {rating}'.format(
+        country_flag=make_flag(beer['country']),
+        rating=get_rating(beer['ratebeer_link']),
+        **beer
+    )
 
 
 def tweet_about_beer(beer, twitter):
