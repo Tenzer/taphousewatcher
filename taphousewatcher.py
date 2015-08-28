@@ -57,8 +57,12 @@ def is_new_beer(new_beer, previous_state):
 
 
 def make_flag(country_code):
+    if country_code.upper() == 'UK':
+        # UK is not part of the ISO 3166-1 standard
+        country_code = 'GB'
+
     result = ''
-    for letter in country_code:
+    for letter in country_code[:2].upper():
         result += unicodedata.lookup('REGIONAL INDICATOR SYMBOL LETTER {}'.format(letter))
     return result
 
