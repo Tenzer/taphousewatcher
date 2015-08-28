@@ -27,7 +27,7 @@ def connect_twitter(config):
 
 
 def scrape(url):
-    html = requests.get(url, headers={'User-Agent': 'Taphouse Watcher (https://twitter.com/TaphouseWatcher)'}).text
+    html = requests.get(url, headers={'User-Agent': 'Taphouse Watcher Bot (+https://twitter.com/TaphouseWatcher)'}).text
     soup = BeautifulSoup(html, 'html.parser')
     beer_table = soup.find('table', id='beerTable').tbody
 
