@@ -53,6 +53,24 @@ def is_new_beer(new_beer, previous_state):
     return True
 
 
+def get_rating(url):
+    html = requests.get(url, headers={'User-Agent': 'Taphouse Watcher Bot (+https://twitter.com/TaphouseWatcher)'}).text
+    soup = BeautifulSoup(html, 'html.parser')
+    rating_block = soup.find('span', itemprop='rating')
+
+    if not rating_block:
+        print('The beer does not have any rating')
+        return None
+
+    for span in rating_block.find_all('span'):
+        if not span.attrs:
+            # The <span> we are looking for doesn't have any attributes
+            return span.get_text()
+
+    # Safety net
+    return None
+
+
 def make_flag(country_code):
     country_code = country_code.upper()
 
@@ -66,28 +84,18 @@ def make_flag(country_code):
     return result
 
 
-def get_rating(url):
-    html = requests.get(url, headers={'User-Agent': 'Taphouse Watcher Bot (+https://twitter.com/TaphouseWatcher)'}).text
-    soup = BeautifulSoup(html, 'html.parser')
-    rating_block = soup.find('span', itemprop='rating')
-
-    if not rating_block:
-        print('The beer does not have any rating')
-        return 'N/A'
-
-    for span in rating_block.find_all('span'):
-        if not span.attrs:
-            # The <span> we are looking for doesn't have any attributes
-            return span.get_text()
-
-    # Safety net
-    return 'N/A'
-
-
 def generate_tweet(beer):
-    return 'New on tap {tap} | {name} | {alcohol} {type} | {brewery} | {country_flag} | RateBeer: {rating}'.format(
+    if beer['rating']:
+        rating_text = ' | RateBeer: {}'.format(beer['rating'])
+
+        if int(beer['rating']) >= 95:
+            rating_text += ' {}'.format(unicodedata.lookup('GLOWING STAR'))
+    else:
+        rating_text = ''
+
+    return 'New on tap {tap} | {name} | {alcohol} {type} | {brewery} | {country_flag}{rating_text}'.format(
         country_flag=make_flag(beer['country']),
-        rating=get_rating(beer['ratebeer_link']),
+        rating_text=rating_text,
         **beer
     )
 
@@ -105,6 +113,7 @@ if __name__ == '__main__':
     new_state = []
     for beer in scrape('http://taphouse.dk/'):
         if is_new_beer(beer, previous_state):
+            beer['rating'] = get_rating(beer['ratebeer_link'])
             tweet_about_beer(beer, twitter)
 
         new_state.append(beer)
