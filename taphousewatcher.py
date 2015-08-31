@@ -79,14 +79,14 @@ def make_flag(country_code):
 
 def generate_tweet(beer):
     if beer['rating']:
-        rating_text = ' | RateBeer: {}'.format(beer['rating'])
+        rating_text = str(beer['rating'])
 
         if beer['rating'] >= 95:
             rating_text += ' {}'.format(unicodedata.lookup('GLOWING STAR'))
     else:
-        rating_text = ''
+        rating_text = 'N/A'
 
-    return 'New on tap {tap} | {name} | {alcohol} {type} | {brewery} | {country_flag}{rating_text}'.format(
+    return 'New on tap {tap} | {name} | {alcohol} {type} | {brewery} | {country_flag} | RateBeer: {rating_text}'.format(
         country_flag=make_flag(beer['country']),
         rating_text=rating_text,
         **beer
