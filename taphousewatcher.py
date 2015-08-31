@@ -79,18 +79,42 @@ def make_flag(country_code):
 
 def generate_tweet(beer):
     if beer['rating']:
-        rating_text = str(beer['rating'])
+        beer['rating_text'] = str(beer['rating'])
 
         if beer['rating'] >= 95:
-            rating_text += ' {}'.format(unicodedata.lookup('GLOWING STAR'))
+            beer['rating_text'] += ' {}'.format(unicodedata.lookup('GLOWING STAR'))
     else:
-        rating_text = 'N/A'
+        beer['rating_text'] = 'N/A'
 
-    return 'New on tap {tap} | {name} | {alcohol} {type} | {brewery} | {country_flag} | RateBeer: {rating_text}'.format(
-        country_flag=make_flag(beer['country']),
-        rating_text=rating_text,
+    beer['country_flag'] = make_flag(beer['country'])
+
+    tweet = 'New on tap {tap} | {name} | {alcohol} {type} | {brewery} | {country_flag} | RateBeer: {rating_text}'.format(**beer)
+    if len(tweet) <= 140:
+        return tweet
+
+    # We have to trim some of the fat, let's start with the brewery
+    tweet = 'New on tap {tap} | {name} | {alcohol} {type} | {country_flag} | RateBeer: {rating_text}'.format(**beer)
+    if len(tweet) <= 140:
+        return tweet
+
+    # Try to just cut off some minor bits then
+    tweet = 'Tap {tap} | {name} | {alcohol} {type} | {country_flag} | RB: {rating_text}'.format(**beer)
+    if len(tweet) <= 140:
+        return tweet
+
+    # We have to take more drastic measures now
+    tweet = 'Tap {tap} | {name_short}{ellipsis} | {alcohol} {type_short}{ellipsis} | {country_flag} | RB: {rating_text}'.format(
+        name_short=beer['name'][:70].strip(),
+        type_short=beer['type'][:30].strip(),
+        ellipsis=unicodedata.lookup('HORIZONTAL ELLIPSIS'),
         **beer
     )
+    if len(tweet) <= 140:
+        return tweet
+    else:
+        # Give up, something has to be totally off
+        print('Could not generate a short enough tweet based on this beer:', beer)
+        exit(1)
 
 
 def tweet_about_beer(beer, twitter):
