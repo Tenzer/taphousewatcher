@@ -56,12 +56,12 @@ def is_new_beer(new_beer, previous_state):
 def get_rating(url):
     html = requests.get(url, headers={'User-Agent': 'Taphouse Watcher Bot (+https://twitter.com/TaphouseWatcher)'}).text
     soup = BeautifulSoup(html, 'html.parser')
-    rating_block = soup.find('span', itemprop='rating')
+    rating_block = soup.find('span', string='overall')
 
     if not rating_block:
         return None
 
-    return int(rating_block.find_all('span')[1].get_text())
+    return int(rating_block.nextSibling.get_text())
 
 
 def make_flag(country_code):
