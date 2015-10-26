@@ -4,5 +4,9 @@
         "token_secret": "",
         "consumer_key": "",
         "consumer_secret": ""
+    },
+    "email": {
+        "recipient": "",
+        "threshold": 5
     }
 }

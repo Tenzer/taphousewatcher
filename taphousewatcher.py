@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
 import json
+import smtplib
 import unicodedata
+from email.mime.text import MIMEText
 from os import environ, path
 
 import requests
@@ -121,6 +123,21 @@ def tweet_about_beer(beer, twitter):
     twitter.statuses.update(status=generate_tweet(beer))
 
 
+def possibly_mail_alert(config, failed):
+    if 'email' not in config or not config['email'].get('recipient') or failed != config['email'].get('threshold'):
+        return
+
+    message = MIMEText('Failed to get RateBeer rating for the last {} beers!'.format(failed))
+    message['Subject'] = 'Alert from Taphouse Watcher'
+    message['From'] = 'TaphouseWatcher'
+    message['To'] = config['email']['recipient']
+
+    smtp = smtplib.SMTP()
+    smtp.connect()
+    smtp.send_message(message)
+    smtp.quit()
+
+
 if __name__ == '__main__':
     script_folder = path.dirname(__file__)
     config = read_file(path.join(script_folder, 'config.json'))
@@ -128,12 +145,23 @@ if __name__ == '__main__':
     twitter = connect_twitter(config)
 
     new_state = []
+    failed_ratings = previous_state['failed_ratings']
     for beer in scrape('http://taphouse.dk/'):
-        if is_new_beer(beer, previous_state):
+        if is_new_beer(beer, previous_state['beers']):
             beer['rating'] = get_rating(beer['ratebeer_link'])
             tweet_about_beer(beer, twitter)
+
+            if beer['rating']:
+                failed_ratings = 0
+            else:
+                failed_ratings += 1
+                possibly_mail_alert(config, failed_ratings)
 
         new_state.append(beer)
 
     if 'DEBUG' not in environ:
-        write_file(new_state, path.join(script_folder, 'state.json'))
+        payload = {
+            'failed_ratings': failed_ratings,
+            'beers': new_state,
+        }
+        write_file(payload, path.join(script_folder, 'state.json'))
