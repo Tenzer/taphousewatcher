@@ -44,6 +44,7 @@ def scrape(url):
             'country': attributes[4].get_text(),
             'alcohol': attributes[5].get_text(),
             'ratebeer_link': attributes[8].a['href'],
+            'christmas': bool(attributes[8].find('span', 'tree')),
         }
 
 
@@ -89,6 +90,9 @@ def generate_tweet(beer):
         beer['rating_text'] = 'N/A'
 
     beer['country_flag'] = make_flag(beer['country'])
+
+    if beer['christmas']:
+        beer['type'] = '{} {}'.format(unicodedata.lookup('CHRISTMAS TREE'), beer['type'])
 
     tweet = 'New on tap {tap} | {name} | {alcohol} {type} | {brewery} | {country_flag} | RateBeer: {rating_text}'.format(**beer)
     if len(tweet) <= 140:
