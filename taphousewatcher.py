@@ -25,39 +25,40 @@ def connect_twitter(config):
     return Twitter(auth=OAuth(**config['twitter']))
 
 
-def scrape(url):
-    html = requests.get(url, headers={'User-Agent': 'Taphouse Watcher Bot (+https://twitter.com/TaphouseWatcher)'}).text
-    soup = BeautifulSoup(html, 'html.parser')
-    beer_table = soup.find('table', id='beerTable').tbody
+def get_taps(url):
+    data = requests.get(url, headers={'User-Agent': 'Taphouse Watcher Bot (+https://twitter.com/TaphouseWatcher)'}).json()
 
-    for beer in beer_table.find_all('tr'):
-        attributes = beer.find_all('td')
-        if len(attributes) <= 1:
-            # Propably an empty tap
+    for tap, beer in data.items():
+        if not beer:
+            # An empty tap
             continue
 
         yield {
-            'tap': attributes[0].get_text(),
-            'name': attributes[1].get_text().strip(),
-            'type': attributes[2].get_text(),
-            'brewery': attributes[3].get_text(),
-            'country': attributes[4].get_text(),
-            'alcohol': attributes[5].get_text(),
-            'ratebeer_link': attributes[8].a['href'],
-            'christmas': bool(attributes[8].find('span', 'tree')),
+            'tap': tap,
+            'id': beer.get('kegId'),
+            'name': beer.get('beverage'),
+            'type': beer.get('beverageType'),
+            'brewery': beer.get('company'),
+            'country': beer.get('country'),
+            'alcohol': beer.get('abv'),
+            'ratebeer_id': beer.get('ratebeerId'),
+            'christmas': beer.get('xmas'),
         }
 
 
 def is_new_beer(new_beer, previous_state):
     for beer in previous_state:
-        if new_beer['name'] == beer['name']:
+        if new_beer['id'] == beer['id']:
             return False
 
     return True
 
 
-def get_rating(url):
-    html = requests.get(url, headers={'User-Agent': 'Taphouse Watcher Bot (+https://twitter.com/TaphouseWatcher)'}).text
+def get_rating(beerId):
+    html = requests.get(
+        'http://www.ratebeer.com/Ratings/Beer/Beer-Ratings.asp?BeerID={}'.format(beerId),
+        headers={'User-Agent': 'Taphouse Watcher Bot (+https://twitter.com/TaphouseWatcher)'}
+    ).text
     soup = BeautifulSoup(html, 'html.parser')
     rating_block = soup.find('span', string='overall')
 
@@ -150,9 +151,9 @@ if __name__ == '__main__':
 
     new_state = []
     failed_ratings = previous_state['failed_ratings']
-    for beer in scrape('http://taphouse.dk/'):
+    for beer in get_taps('http://taphouse.dk/api/taplist/'):
         if is_new_beer(beer, previous_state['beers']):
-            beer['rating'] = get_rating(beer['ratebeer_link'])
+            beer['rating'] = get_rating(beer['ratebeer_id'])
             tweet_about_beer(beer, twitter)
 
             if beer['rating']:
