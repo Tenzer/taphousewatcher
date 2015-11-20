@@ -31,10 +31,10 @@ def get_taps(url):
     for tap, beer in data.items():
         if not beer:
             # An empty tap
+            yield tap, {}
             continue
 
-        yield {
-            'tap': tap,
+        yield tap, {
             'id': beer.get('kegId'),
             'name': beer.get('beverage'),
             'type': beer.get('beverageType'),
@@ -44,14 +44,6 @@ def get_taps(url):
             'ratebeer_id': beer.get('ratebeerId'),
             'christmas': beer.get('xmas'),
         }
-
-
-def is_new_beer(new_beer, previous_state):
-    for beer in previous_state:
-        if new_beer['id'] == beer['id']:
-            return False
-
-    return True
 
 
 def get_rating(beerId):
@@ -149,10 +141,14 @@ if __name__ == '__main__':
     previous_state = read_file(path.join(script_folder, 'state.json'))
     twitter = connect_twitter(config)
 
-    new_state = []
+    new_state = {}
     failed_ratings = previous_state['failed_ratings']
-    for beer in get_taps('http://taphouse.dk/api/taplist/'):
-        if is_new_beer(beer, previous_state['beers']):
+    for tap, beer in get_taps('http://taphouse.dk/api/taplist/'):
+        if not beer:
+            new_state[tap] = previous_state['beers'].get(tap, {})
+            continue
+
+        if beer['id'] != previous_state['beers'].get(tap, {}).get('id'):
             beer['rating'] = get_rating(beer['ratebeer_id'])
             tweet_about_beer(beer, twitter)
 
@@ -162,7 +158,7 @@ if __name__ == '__main__':
                 failed_ratings += 1
                 possibly_mail_alert(config, failed_ratings)
 
-        new_state.append(beer)
+        new_state[tap] = beer
 
     if 'DEBUG' not in environ:
         payload = {
