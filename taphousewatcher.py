@@ -35,6 +35,7 @@ def get_taps(url):
             continue
 
         yield tap, {
+            'tap': tap,
             'id': beer.get('kegId'),
             'name': beer.get('beverage'),
             'type': beer.get('beverageType'),
