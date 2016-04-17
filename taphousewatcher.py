@@ -8,7 +8,7 @@ from os import environ, path
 
 import requests
 from bs4 import BeautifulSoup
-from twitter import OAuth, Twitter
+from twitter import OAuth, Twitter, TwitterHTTPError
 
 
 def read_file(file_path):
@@ -118,7 +118,10 @@ def generate_tweet(beer):
 
 
 def tweet_about_beer(beer, twitter):
-    twitter.statuses.update(status=generate_tweet(beer))
+    try:
+        twitter.statuses.update(status=generate_tweet(beer))
+    except TwitterHTTPError:
+        pass
 
 
 def possibly_mail_alert(config, failed):
