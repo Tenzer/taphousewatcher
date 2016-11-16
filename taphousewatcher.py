@@ -57,12 +57,12 @@ def get_rating(beerId):
         headers={'User-Agent': 'Taphouse Watcher Bot (+https://twitter.com/TaphouseWatcher)'}
     ).text
     soup = BeautifulSoup(html, 'html.parser')
-    rating_block = soup.find('span', string='overall')
+    rating = soup.find('div', class_='ratingValue')
 
-    if not rating_block:
+    if not rating:
         return None
 
-    return int(rating_block.nextSibling.get_text())
+    return int(rating.get_text())
 
 
 def make_flag(country_code):
