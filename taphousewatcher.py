@@ -52,10 +52,14 @@ def get_taps(url):
 
 
 def get_rating(beerId):
-    html = requests.get(
-        'http://www.ratebeer.com/Ratings/Beer/Beer-Ratings.asp?BeerID={}'.format(beerId),
-        headers={'User-Agent': 'Taphouse Watcher Bot (+https://twitter.com/TaphouseWatcher)'}
-    ).text
+    try:
+        html = requests.get(
+            'http://www.ratebeer.com/Ratings/Beer/Beer-Ratings.asp?BeerID={}'.format(beerId),
+            headers={'User-Agent': 'Taphouse Watcher Bot (+https://twitter.com/TaphouseWatcher)'}
+        ).text
+    except requests.RequestException:
+        return None
+
     soup = BeautifulSoup(html, 'html.parser')
     rating = soup.find('div', class_='ratingValue')
 
