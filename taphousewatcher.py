@@ -96,17 +96,17 @@ def generate_tweet(beer):
     if beer['christmas']:
         beer['type'] = '{} {}'.format(unicodedata.lookup('CHRISTMAS TREE'), beer['type'])
 
-    tweet = 'New on tap {tap} | {name} | {alcohol}% {type} | {brewery} | {country_flag} | RateBeer: {rating_text}'.format(**beer)
+    tweet = 'New on tap {tap} | {name} | {alcohol}% {type} | {brewery} | {country_flag} | RateBeer: {rating_text}'.format(**beer)
     if len(tweet) <= 140:
         return tweet
 
     # We have to trim some of the fat, let's start with the brewery
-    tweet = 'New on tap {tap} | {name} | {alcohol}% {type} | {country_flag} | RateBeer: {rating_text}'.format(**beer)
+    tweet = 'New on tap {tap} | {name} | {alcohol}% {type} | {country_flag} | RateBeer: {rating_text}'.format(**beer)
     if len(tweet) <= 140:
         return tweet
 
     # Try to just cut off some minor bits then
-    tweet = 'Tap {tap} | {name} | {alcohol}% {type} | {country_flag} | RB: {rating_text}'.format(**beer)
+    tweet = 'Tap {tap} | {name} | {alcohol}% {type} | {country_flag} | RB: {rating_text}'.format(**beer)
     if len(tweet) <= 140:
         return tweet
 
