@@ -8,5 +8,10 @@
     "email": {
         "recipient": "",
         "threshold": 5
+    },
+    "geo": {
+        "enabled": false,
+        "lat": 0.0,
+        "long": 0.0
     }
 }

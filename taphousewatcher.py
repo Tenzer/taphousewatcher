@@ -51,10 +51,10 @@ def get_taps(url):
         }
 
 
-def get_rating(beerId):
+def get_rating(beer_id):
     try:
         html = requests.get(
-            'http://www.ratebeer.com/Ratings/Beer/Beer-Ratings.asp?BeerID={}'.format(beerId),
+            'http://www.ratebeer.com/Ratings/Beer/Beer-Ratings.asp?BeerID={}'.format(beer_id),
             headers={'User-Agent': 'Taphouse Watcher Bot (+https://twitter.com/TaphouseWatcher)'}
         ).text
     except requests.RequestException:
@@ -125,9 +125,12 @@ def generate_tweet(beer):
         exit(1)
 
 
-def tweet_about_beer(beer, twitter):
+def tweet_about_beer(beer, twitter, config):
     try:
-        twitter.statuses.update(status=generate_tweet(beer))
+        if config.get('geo', {}).get('enabled', False):
+            twitter.statuses.update(status=generate_tweet(beer), lat=config['geo'].get('lat'), long=config['geo'].get('long'))
+        else:
+            twitter.statuses.update(status=generate_tweet(beer))
     except TwitterHTTPError:
         pass
 
@@ -162,7 +165,7 @@ if __name__ == '__main__':
 
         if beer['id'] != previous_state['beers'].get(tap, {}).get('id'):
             beer['rating'] = get_rating(beer['ratebeer_id'])
-            tweet_about_beer(beer, twitter)
+            tweet_about_beer(beer, twitter, config)
 
             if beer['rating']:
                 failed_ratings = 0
