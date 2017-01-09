@@ -128,7 +128,12 @@ def generate_tweet(beer):
 def tweet_about_beer(beer, twitter, config):
     try:
         if config.get('geo', {}).get('enabled', False):
-            twitter.statuses.update(status=generate_tweet(beer), lat=config['geo'].get('lat'), long=config['geo'].get('long'))
+            twitter.statuses.update(
+                status=generate_tweet(beer),
+                lat=config['geo'].get('lat'),
+                long=config['geo'].get('long'),
+                display_coordinates=True,
+            )
         else:
             twitter.statuses.update(status=generate_tweet(beer))
     except TwitterHTTPError:
