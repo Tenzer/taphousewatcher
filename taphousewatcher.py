@@ -28,7 +28,7 @@ def connect_twitter(config):
 def get_taps(url):
     try:
         data = requests.get(url, headers={'User-Agent': 'Taphouse Watcher Bot (+https://twitter.com/TaphouseWatcher)'}).json()
-    except requests.RequestException:
+    except (requests.RequestException, json.JSONDecodeError):
         # There's no real error handling here, we just give up in case we can't contact the site
         exit()
 
