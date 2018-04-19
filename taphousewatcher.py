@@ -7,7 +7,6 @@ from email.mime.text import MIMEText
 from os import environ, path
 
 import requests
-from bs4 import BeautifulSoup
 from twitter import OAuth, Twitter, TwitterHTTPError
 
 
@@ -49,27 +48,31 @@ def get_taps(url):
             'brewery': beer.get('company'),
             'country': beer.get('country'),
             'alcohol': beer.get('abv'),
-            'ratebeer_id': beer.get('ratebeerId'),
+            'untappd_id': beer.get('untappdId'),
             'christmas': beer.get('xmas'),
         }
 
 
-def get_rating(beer_id):
+def get_rating(config, beer_id):
+    application_id = config.get('algolia', {}).get('application_id')
+    api_key = config.get('algolia', {}).get('api_key')
+
     try:
-        html = requests.get(
-            'http://www.ratebeer.com/Ratings/Beer/Beer-Ratings.asp?BeerID={}'.format(beer_id),
-            headers={'User-Agent': 'Taphouse Watcher Bot (+https://twitter.com/TaphouseWatcher)'}
-        ).text
+        response = requests.get(
+            'https://{}-dsn.algolia.net/1/indexes/beer/{}'.format(application_id, beer_id),
+            params={'attributes': 'rating_score'},
+            headers={
+                'User-Agent': 'Taphouse Watcher Bot (+https://twitter.com/TaphouseWatcher)',
+                'X-Algolia-Application-Id': application_id.upper(),
+                'X-Algolia-Api-Key': api_key,
+            }
+        )
+        if response.ok:
+            return response.json().get('rating_score')
     except requests.RequestException:
-        return None
+        pass
 
-    soup = BeautifulSoup(html, 'html.parser')
-    rating = soup.find('div', class_='ratingValue')
-
-    if not rating:
-        return None
-
-    return int(rating.get_text())
+    return None
 
 
 def make_flag(country_code):
@@ -86,10 +89,10 @@ def make_flag(country_code):
 
 
 def generate_tweet(beer):
-    if beer['rating']:
-        beer['rating_text'] = str(beer['rating'])
+    if beer.get('rating'):
+        beer['rating_text'] = str(round(beer['rating'], 2))
 
-        if beer['rating'] >= 95:
+        if beer['rating'] >= 4.5:
             beer['rating_text'] += ' {}'.format(unicodedata.lookup('GLOWING STAR'))
     else:
         beer['rating_text'] = 'N/A'
@@ -99,22 +102,22 @@ def generate_tweet(beer):
     if beer['christmas']:
         beer['type'] = '{} {}'.format(unicodedata.lookup('CHRISTMAS TREE'), beer['type'])
 
-    tweet = 'New on tap {tap} | {name} | {alcohol}% {type} | {brewery} | {country_flag} | RateBeer: {rating_text}'.format(**beer)
+    tweet = 'New on tap {tap} | {name} | {alcohol}% {type} | {brewery} | {country_flag} | Untappd: {rating_text}'.format(**beer)
     if len(tweet) <= 280:
         return tweet
 
     # We have to trim some of the fat, let's start with the brewery
-    tweet = 'New on tap {tap} | {name} | {alcohol}% {type} | {country_flag} | RateBeer: {rating_text}'.format(**beer)
+    tweet = 'New on tap {tap} | {name} | {alcohol}% {type} | {country_flag} | Untappd: {rating_text}'.format(**beer)
     if len(tweet) <= 280:
         return tweet
 
     # Try to just cut off some minor bits then
-    tweet = 'Tap {tap} | {name} | {alcohol}% {type} | {country_flag} | RB: {rating_text}'.format(**beer)
+    tweet = 'Tap {tap} | {name} | {alcohol}% {type} | {country_flag} | UT: {rating_text}'.format(**beer)
     if len(tweet) <= 280:
         return tweet
 
     # We have to take more drastic measures now
-    tweet = 'Tap {tap} | {name_short}{ellipsis} | {alcohol}% {type_short}{ellipsis} | {country_flag} | RB: {rating_text}'.format(
+    tweet = 'Tap {tap} | {name_short}{ellipsis} | {alcohol}% {type_short}{ellipsis} | {country_flag} | UT: {rating_text}'.format(
         name_short=beer['name'][:70].strip(),
         type_short=beer['type'][:30].strip(),
         ellipsis=unicodedata.lookup('HORIZONTAL ELLIPSIS'),
@@ -172,7 +175,9 @@ if __name__ == '__main__':
             continue
 
         if beer['id'] != previous_state.get('beers', {}).get(tap, {}).get('id'):
-            beer['rating'] = get_rating(beer['ratebeer_id'])
+            if beer['untappd_id']:
+                beer['rating'] = get_rating(config, beer['untappd_id'])
+
             tweet_about_beer(beer, twitter, config)
 
             if beer.get('rating'):
