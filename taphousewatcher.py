@@ -163,7 +163,7 @@ if __name__ == '__main__':
 
     new_state = {}
     failed_ratings = previous_state['failed_ratings']
-    for tap, beer in get_taps('http://taphouse.dk/api/taplist/'):
+    for tap, beer in get_taps('https://taphouse.dk/api/taplist/'):
         if not beer:
             new_state[tap] = previous_state['beers'].get(tap, {})
             continue
