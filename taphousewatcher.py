@@ -12,8 +12,11 @@ from twitter import OAuth, Twitter, TwitterHTTPError
 
 
 def read_file(file_path):
-    with open(file_path) as file_pointer:
-        return json.load(file_pointer)
+    try:
+        with open(file_path) as file_pointer:
+            return json.load(file_pointer)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
 
 
 def write_file(content, file_path):
@@ -162,17 +165,17 @@ if __name__ == '__main__':
     twitter = connect_twitter(config)
 
     new_state = {}
-    failed_ratings = previous_state['failed_ratings']
+    failed_ratings = previous_state.get('failed_ratings', 0)
     for tap, beer in get_taps('https://taphouse.dk/api/taplist/'):
         if not beer:
-            new_state[tap] = previous_state['beers'].get(tap, {})
+            new_state[tap] = previous_state.get('beers', {}).get(tap, {})
             continue
 
-        if beer['id'] != previous_state['beers'].get(tap, {}).get('id'):
+        if beer['id'] != previous_state.get('beers', {}).get(tap, {}).get('id'):
             beer['rating'] = get_rating(beer['ratebeer_id'])
             tweet_about_beer(beer, twitter, config)
 
-            if beer['rating']:
+            if beer.get('rating'):
                 failed_ratings = 0
             else:
                 failed_ratings += 1
