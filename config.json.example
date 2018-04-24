@@ -14,8 +14,8 @@
         "lat": 0.0,
         "long": 0.0
     },
-    "algolia": {
-        "application_id": ""
-        "api_key": ""
+    "untappd": {
+        "client_id": "",
+        "client_secret": ""
     }
 }

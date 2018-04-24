@@ -54,22 +54,19 @@ def get_taps(url):
 
 
 def get_rating(config, beer_id):
-    application_id = config.get('algolia', {}).get('application_id')
-    api_key = config.get('algolia', {}).get('api_key')
-
     try:
         response = requests.get(
-            'https://{}-dsn.algolia.net/1/indexes/beer/{}'.format(application_id, beer_id),
-            params={'attributes': 'rating_score'},
-            headers={
-                'User-Agent': 'Taphouse Watcher Bot (+https://twitter.com/TaphouseWatcher)',
-                'X-Algolia-Application-Id': application_id.upper(),
-                'X-Algolia-Api-Key': api_key,
-            }
+            'https://api.untappd.com/v4/beer/info/{}'.format(beer_id),
+            params={
+                'client_id': config['untappd']['client_id'],
+                'client_secret': config['untappd']['client_secret'],
+                'compact': 'true',
+            },
+            headers={'User-Agent': 'Taphouse Watcher Bot (+https://twitter.com/TaphouseWatcher)'},
         )
         if response.ok:
-            return response.json().get('rating_score')
-    except requests.RequestException:
+            return response.json()['response']['beer']['rating_score']
+    except (KeyError, requests.RequestException):
         pass
 
     return None
