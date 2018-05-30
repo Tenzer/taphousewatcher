@@ -147,7 +147,7 @@ def possibly_mail_alert(config, failed):
     if 'email' not in config or not config['email'].get('recipient') or failed != config['email'].get('threshold'):
         return
 
-    message = MIMEText('Failed to get RateBeer rating for the last {} beers!'.format(failed))
+    message = MIMEText('Failed to get Untappd rating for the last {} beers!'.format(failed))
     message['Subject'] = 'Alert from Taphouse Watcher'
     message['From'] = 'TaphouseWatcher'
     message['To'] = config['email']['recipient']
